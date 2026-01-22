@@ -140,7 +140,4 @@ public class Prestamo {
         return sb.toString();
     }
 
-
-
-    // Resto del código igual
 }
