@@ -14,38 +14,80 @@ public class MainSistemaBiblio {
         System.out.println("-----------------------------------------------------\n");
 
         Scanner scanner = new Scanner(System.in);
-        int opcionSucursal;
-        Sucursal sucursalSeleccionada = null;
 
         try {
-            // Seleccionar sucursal
-            System.out.println("Seleccione la sucursal:");
-            System.out.println("1. Biblioteca Park");
-            System.out.println("2. Biblioteca Granados");
-            System.out.print("Opcion: ");
+            // Crear ambas sucursales una vez al inicio
+            SucursalPark sucursalPark = new SucursalPark();
+            SucursalGranados sucursalGranados = new SucursalGranados();
 
-            opcionSucursal = Integer.parseInt(scanner.nextLine());
+            // Menú principal para seleccionar/alternar sucursales
+            Sucursal sucursalSeleccionada = null;
+            GestorBiblioteca gestor = null;
 
-            switch (opcionSucursal) {
-                case 1:
-                    sucursalSeleccionada = new SucursalPark();
-                    break;
-                case 2:
-                    sucursalSeleccionada = new SucursalGranados();
-                    break;
-                default:
-                    System.out.println("Opcion no valida. Saliendo del sistema.");
-                    return;
+            while (true) {
+                if (sucursalSeleccionada == null) {
+                    // Primera vez seleccionando sucursal
+                    System.out.println("\nSeleccione la sucursal:");
+                    System.out.println("1. Biblioteca Park");
+                    System.out.println("2. Biblioteca Granados");
+                    System.out.println("0. Salir del sistema");
+                    System.out.print("Opcion: ");
+
+                    int opcionSucursal = Integer.parseInt(scanner.nextLine());
+
+                    switch (opcionSucursal) {
+                        case 1:
+                            sucursalSeleccionada = sucursalPark;
+                            gestor = new GestorBiblioteca(sucursalSeleccionada, sucursalPark, sucursalGranados);
+                            break;
+                        case 2:
+                            sucursalSeleccionada = sucursalGranados;
+                            gestor = new GestorBiblioteca(sucursalSeleccionada, sucursalPark, sucursalGranados);
+                            break;
+                        case 0:
+                            System.out.println("Saliendo del sistema...");
+                            return;
+                        default:
+                            System.out.println("Opcion no valida.");
+                            continue;
+                    }
+                }
+
+                System.out.println("\nBienvenido a " + sucursalSeleccionada.getNombre());
+                System.out.println(sucursalSeleccionada);
+
+                // Mostrar menu del gestor
+                gestor.mostrarMenu();
+
+                // Después de salir del menú del gestor, preguntar si cambiar de sucursal
+                System.out.println("\n¿Desea cambiar de sucursal?");
+                System.out.println("1. Si, cambiar de sucursal");
+                System.out.println("2. No, continuar en " + sucursalSeleccionada.getNombre());
+                System.out.println("0. Salir del sistema");
+                System.out.print("Opcion: ");
+
+                int opcionCambio = Integer.parseInt(scanner.nextLine());
+
+                switch (opcionCambio) {
+                    case 1:
+                        // Cambiar a la otra sucursal
+                        if (sucursalSeleccionada.getCodigo().equals("PARK")) {
+                            sucursalSeleccionada = sucursalGranados;
+                        } else {
+                            sucursalSeleccionada = sucursalPark;
+                        }
+                        gestor = new GestorBiblioteca(sucursalSeleccionada, sucursalPark, sucursalGranados);
+                        break;
+                    case 2:
+                        // Continuar en la misma sucursal
+                        break;
+                    case 0:
+                        System.out.println("\n--- SISTEMA FINALIZADO ---");
+                        return;
+                    default:
+                        System.out.println("Opcion no valida, continuando en la misma sucursal.");
+                }
             }
-
-            System.out.println("\nBienvenido a " + sucursalSeleccionada.getNombre());
-            System.out.println(sucursalSeleccionada);
-
-            // Crear gestor para la sucursal seleccionada
-            GestorBiblioteca gestor = new GestorBiblioteca(sucursalSeleccionada);
-
-            // Mostrar menu principal
-            gestor.mostrarMenu();
 
         } catch (NumberFormatException e) {
             System.out.println("Error: Debe ingresar un numero valido");

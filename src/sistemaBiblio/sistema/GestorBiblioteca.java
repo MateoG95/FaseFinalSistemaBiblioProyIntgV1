@@ -22,16 +22,21 @@ import java.util.Scanner;
 
 public class GestorBiblioteca {
     private Sucursal sucursalActual;
+    private Sucursal sucursalPark;
+    private Sucursal sucursalGranados;
     private ArrayList<Usuario> usuariosRegistrados;
     private Scanner scanner;
     private DateTimeFormatter fechaFormatter;
 
-    public GestorBiblioteca(Sucursal sucursal) {
-        if (sucursal == null) {
-            throw new IllegalArgumentException("Sucursal no puede ser nula");
+
+    public GestorBiblioteca(Sucursal sucursalActual, Sucursal sucursalPark, Sucursal sucursalGranados) {
+        if (sucursalActual == null || sucursalPark == null || sucursalGranados == null) {
+            throw new IllegalArgumentException("Sucursales no pueden ser nulas");
         }
 
-        this.sucursalActual = sucursal;
+        this.sucursalActual = sucursalActual;
+        this.sucursalPark = sucursalPark;
+        this.sucursalGranados = sucursalGranados;
         this.usuariosRegistrados = new ArrayList<>();
         this.scanner = new Scanner(System.in);
         this.fechaFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -185,24 +190,19 @@ public class GestorBiblioteca {
     }
 
     private void mostrarCatalogoOtraSucursal() {
-        // Crear sucursal temporal para mostrar
         Sucursal otraSucursal;
         if (sucursalActual.getCodigo().equals("PARK")) {
-            otraSucursal = new SucursalGranados();
+            otraSucursal = sucursalGranados;
         } else {
-            otraSucursal = new SucursalPark();
+            otraSucursal = sucursalPark;
         }
-
         mostrarCatalogoSucursal(otraSucursal);
     }
 
     private void mostrarCatalogoAmbasSucursales() {
-        SucursalPark park = new SucursalPark();
-        SucursalGranados granados = new SucursalGranados();
-
-        mostrarCatalogoSucursal(park);
+        mostrarCatalogoSucursal(sucursalPark);
         System.out.println("\n");
-        mostrarCatalogoSucursal(granados);
+        mostrarCatalogoSucursal(sucursalGranados);
     }
 
     private void verLibrosDisponibles() {
@@ -454,10 +454,8 @@ public class GestorBiblioteca {
                 return;
             }
 
-            // Verificar si es administrador
             if (!(usuario instanceof Administrador)) {
                 System.out.println("Error: Solo los administradores pueden realizar transferencias");
-                System.out.println("Usuario " + usuario.getNombre() + " es de tipo: " + usuario.getTipo());
                 return;
             }
 
@@ -496,17 +494,17 @@ public class GestorBiblioteca {
                 return;
             }
 
-            // Determinar sucursal destino automaticamente
-            String sucursalDestino;
+            // Obtener sucursal destino
+            Sucursal sucursalDestino;
             if (sucursalActual.getCodigo().equals("PARK")) {
-                sucursalDestino = "GRANADOS";
+                sucursalDestino = sucursalGranados;
             } else {
-                sucursalDestino = "PARK";
+                sucursalDestino = sucursalPark;
             }
 
             System.out.println("\nTransferencia programada:");
-            System.out.println("Sucursal origen: " + sucursalActual.getCodigo());
-            System.out.println("Sucursal destino: " + sucursalDestino);
+            System.out.println("Sucursal origen: " + sucursalActual.getNombre());
+            System.out.println("Sucursal destino: " + sucursalDestino.getNombre());
             System.out.println("Libro: " + libro.getTitulo());
             System.out.println("Administrador: " + admin.getNombre());
 
@@ -525,12 +523,16 @@ public class GestorBiblioteca {
 
             Transferencia transferencia = new Transferencia(
                     codigoTransferencia, libro, sucursalActual.getCodigo(),
-                    sucursalDestino, admin
+                    sucursalDestino.getCodigo(), admin
             );
 
             // Iniciar transferencia
             boolean iniciada = transferencia.iniciarTransferencia();
             if (iniciada) {
+                // Agregar transferencia a ambas sucursales
+                sucursalActual.getTransferencias().add(transferencia);
+                sucursalDestino.getTransferencias().add(transferencia);
+
                 System.out.println("Transferencia iniciada exitosamente");
                 System.out.println("Codigo de transferencia: " + codigoTransferencia);
                 System.out.println("El libro estara en transito por 2 dias habiles");
@@ -542,8 +544,15 @@ public class GestorBiblioteca {
                 if (completarAhora.equals("S")) {
                     boolean completada = transferencia.completarTransferencia();
                     if (completada) {
-                        System.out.println("Transferencia completada exitosamente");
-                        System.out.println("El libro ahora esta disponible en " + sucursalDestino);
+                        // IMPORTANTE: Remover libro de sucursal origen y agregar a destino
+                        boolean removido = sucursalActual.getLibros().remove(libro);
+                        if (removido) {
+                            libro.setSucursal(sucursalDestino.getCodigo());
+                            libro.setDisponible(true);
+                            sucursalDestino.agregarLibro(libro);
+                            System.out.println("Transferencia completada exitosamente");
+                            System.out.println("El libro ahora esta disponible en " + sucursalDestino.getNombre());
+                        }
                     }
                 } else {
                     System.out.println("Transferencia quedara como EN TRANSITO");

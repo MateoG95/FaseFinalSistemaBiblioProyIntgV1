@@ -124,9 +124,9 @@ public abstract class Sucursal {
         return telefono;
     }
 
-    public ArrayList<Libro> getLibros() {
-        return new ArrayList<>(libros);
-    }
+    public ArrayList<Libro> getLibros() {return libros;}
+
+    public boolean removerLibro(Libro libro) {return libros.remove(libro);}
 
     public ArrayList<Prestamo> getPrestamos() {
         return new ArrayList<>(prestamos);
@@ -139,6 +139,7 @@ public abstract class Sucursal {
     public ArrayList<Transferencia> getTransferencias() {
         return new ArrayList<>(transferencias);
     }
+
 
     @Override
     public String toString() {
